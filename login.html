@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - EcoAI</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="auth-page">
+
+<div class="auth-container">
+
+    <div class="auth-left">
+        <div class="brand">
+            <div class="logo">E</div>
+            <h2>EcoAI</h2>
+        </div>
+
+        <div class="auth-message">
+            <span>SMART WASTE CLASSIFICATION</span>
+            <h1>Mỗi hành động nhỏ<br>
+                <span>tạo nên thay đổi lớn.</span>
+            </h1>
+            <p>
+                Nhận diện rác thông minh bằng trí tuệ nhân tạo.
+                Cùng xây dựng một môi trường xanh và bền vững.
+            </p>
+        </div>
+
+        <p class="copyright">EcoAI © 2026</p>
+    </div>
+
+    <div class="auth-right">
+
+        <form id="loginForm">
+
+            <span class="green-text">WELCOME BACK</span>
+
+            <h1>Đăng nhập</h1>
+            <p>Chào mừng bạn quay trở lại EcoAI.</p>
+
+            <label>Email</label>
+            <input type="email" id="email"
+                   placeholder="Nhập email của bạn" required>
+
+            <label>Mật khẩu</label>
+            <input type="password" id="password"
+                   placeholder="Nhập mật khẩu" required>
+
+            <div id="formMessage"></div>
+
+            <button type="submit" class="primary-btn">
+                Đăng nhập →
+            </button>
+
+            <div class="auth-footer">
+                Chưa có tài khoản?
+                <a href="register.html">Đăng ký ngay</a>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script src="js/common.js"></script>
+<script src="js/auth.js"></script>
+
+</body>
+</html>
