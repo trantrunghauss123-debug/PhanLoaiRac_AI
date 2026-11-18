@@ -1,58 +1,48 @@
 
-const EcoAI = {
+// ======================================================
+// ECOAI - COMMON FUNCTIONS
+// ======================================================
 
-    getUsers() {
-        return JSON.parse(
-            localStorage.getItem("ecoai_users") || "[]"
-        );
-    },
+window.EcoAI = {
+  escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[char]);
+  },
 
-    saveUsers(users) {
-        localStorage.setItem(
-            "ecoai_users",
-            JSON.stringify(users)
-        );
-    },
+  async getCurrentUser() {
+    const client = window.ecoaiSupabase;
 
-    getCurrentUser() {
-        return JSON.parse(
-            localStorage.getItem("ecoai_session") || "null"
-        );
-    },
+    if (!client) return null;
 
-    setCurrentUser(user) {
-        localStorage.setItem(
-            "ecoai_session",
-            JSON.stringify(user)
-        );
-    },
+    const { data, error } = await client.auth.getUser();
 
-    logout() {
-        localStorage.removeItem("ecoai_session");
-        window.location.href = "login.html";
-    },
+    if (error || !data.user) return null;
 
-    getHistory() {
-        const user = this.getCurrentUser();
+    const user = data.user;
 
-        if (!user) return [];
+    return {
+      id: user.id,
+      email: user.email,
+      name:
+        user.user_metadata?.full_name ||
+        user.email?.split("@")[0] ||
+        "Người dùng"
+    };
+  },
 
-        return JSON.parse(
-            localStorage.getItem(
-                "ecoai_history_" + user.email
-            ) || "[]"
-        );
-    },
+  async logout() {
+    const client = window.ecoaiSupabase;
 
-    saveHistory(history) {
-        const user = this.getCurrentUser();
-
-        if (!user) return;
-
-        localStorage.setItem(
-            "ecoai_history_" + user.email,
-            JSON.stringify(history)
-        );
+    if (client) {
+      await client.auth.signOut();
     }
 
+    window.location.href = "login.html";
+  }
 };
+
