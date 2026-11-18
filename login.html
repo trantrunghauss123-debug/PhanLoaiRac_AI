@@ -1,35 +1,52 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Đăng nhập - EcoAI</title>
+
+    <meta name="description"
+          content="Đăng nhập vào hệ thống phân loại rác thông minh EcoAI.">
+
     <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body class="auth-page">
 
 <div class="auth-container">
 
+    <!-- PHẦN GIỚI THIỆU -->
     <div class="auth-left">
+
         <div class="brand">
             <div class="logo">E</div>
             <h2>EcoAI</h2>
         </div>
 
         <div class="auth-message">
+
             <span>SMART WASTE CLASSIFICATION</span>
-            <h1>Mỗi hành động nhỏ<br>
+
+            <h1>
+                Mỗi hành động nhỏ<br>
                 <span>tạo nên thay đổi lớn.</span>
             </h1>
+
             <p>
                 Nhận diện rác thông minh bằng trí tuệ nhân tạo.
                 Cùng xây dựng một môi trường xanh và bền vững.
             </p>
+
         </div>
 
         <p class="copyright">EcoAI © 2026</p>
+
     </div>
 
+
+    <!-- PHẦN ĐĂNG NHẬP -->
     <div class="auth-right">
 
         <form id="loginForm">
@@ -37,25 +54,63 @@
             <span class="green-text">WELCOME BACK</span>
 
             <h1>Đăng nhập</h1>
+
             <p>Chào mừng bạn quay trở lại EcoAI.</p>
 
-            <label>Email</label>
-            <input type="email" id="email"
-                   placeholder="Nhập email của bạn" required>
 
-            <label>Mật khẩu</label>
-            <input type="password" id="password"
-                   placeholder="Nhập mật khẩu" required>
+            <!-- EMAIL -->
+            <label for="email">Email</label>
 
-            <div id="formMessage"></div>
+            <input
+                type="email"
+                id="email"
+                name="email"
+                placeholder="Nhập email của bạn"
+                autocomplete="email"
+                required
+            >
 
-            <button type="submit" class="primary-btn">
+
+            <!-- MẬT KHẨU -->
+            <label for="password">Mật khẩu</label>
+
+            <input
+                type="password"
+                id="password"
+                name="password"
+                placeholder="Nhập mật khẩu"
+                autocomplete="current-password"
+                required
+            >
+
+
+            <!-- THÔNG BÁO -->
+            <div
+                id="formMessage"
+                role="status"
+                aria-live="polite"
+            ></div>
+
+
+            <!-- NÚT ĐĂNG NHẬP -->
+            <button
+                type="submit"
+                class="primary-btn"
+                id="loginButton"
+            >
                 Đăng nhập →
             </button>
 
+
+            <!-- ĐĂNG KÝ -->
             <div class="auth-footer">
+
                 Chưa có tài khoản?
-                <a href="register.html">Đăng ký ngay</a>
+
+                <a href="register.html">
+                    Đăng ký ngay
+                </a>
+
             </div>
 
         </form>
@@ -63,11 +118,18 @@
     </div>
 
 </div>
-    
+
+
+<!-- SUPABASE -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- KẾT NỐI SUPABASE -->
 <script src="js/supabase.js"></script>
 
+<!-- HỆ THỐNG ECOAI -->
 <script src="js/common.js"></script>
+
+<!-- XỬ LÝ ĐĂNG NHẬP / ĐĂNG KÝ -->
 <script src="js/auth.js"></script>
 
 </body>
