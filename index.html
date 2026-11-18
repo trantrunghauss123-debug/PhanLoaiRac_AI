@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoAI - Smart Waste</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div class="loading-screen">
+        <div class="logo">E</div>
+        <h1>EcoAI</h1>
+        <p>Smart Waste Classification</p>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script>
+        const user = EcoAI.getCurrentUser();
+
+        if (user) {
+            window.location.href = "home.html";
+        } else {
+            window.location.href = "login.html";
+        }
+    </script>
+
+</body>
+</html>
