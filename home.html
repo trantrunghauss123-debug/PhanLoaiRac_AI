@@ -1,14 +1,17 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#087b49">
     <title>Trang chủ - EcoAI</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body class="app-page" data-page="home">
 
-<div class="sidebar">
+<div class="sidebar" id="sidebar">
     <div class="brand">
         <div class="logo">E</div>
         <h2>EcoAI</h2>
@@ -17,15 +20,15 @@
     <p class="menu-title">MENU</p>
 
     <nav>
-        <a href="home.html" class="active">⌂ Trang chủ</a>
-        <a href="history.html">◷ Lịch sử</a>
-        <a href="about.html">ⓘ Giới thiệu</a>
-        <a href="guide.html">▤ Hướng dẫn</a>
+        <a href="home.html" class="active" data-nav="home">⌂ Trang chủ</a>
+        <a href="history.html" data-nav="history">◷ Lịch sử</a>
+        <a href="about.html" data-nav="about">ⓘ Giới thiệu</a>
+        <a href="guide.html" data-nav="guide">▤ Hướng dẫn</a>
     </nav>
 
     <div class="sidebar-bottom">
         <div id="userName">Người dùng</div>
-        <button id="logoutButton">↪ Đăng xuất</button>
+        <button id="logoutButton" type="button">↪ Đăng xuất</button>
     </div>
 </div>
 
@@ -36,20 +39,27 @@
             <h2>Trang chủ</h2>
             <p>Hệ thống phân loại rác thông minh</p>
         </div>
-        <span class="online-status">● Hệ thống hoạt động</span>
+
+        <span class="online-status">
+            ● Hệ thống hoạt động
+        </span>
     </header>
 
     <section class="welcome-banner">
         <div>
             <span>SMART WASTE CLASSIFICATION</span>
-            <h1>Phân loại rác thông minh<br>
+
+            <h1>
+                Phân loại rác thông minh<br>
                 <strong>bắt đầu từ bạn.</strong>
             </h1>
+
             <p>
-                Tải hình ảnh để AI nhận diện loại rác
+                Tải hình ảnh để AI nhận diện các loại rác
                 và đề xuất phương pháp xử lý phù hợp.
             </p>
         </div>
+
         <div class="banner-icon">♻</div>
     </section>
 
@@ -69,7 +79,11 @@
             <span>Chọn hình ảnh</span>
         </label>
 
-        <button class="upload-card" id="openCamera">
+        <button
+            class="upload-card"
+            id="openCamera"
+            type="button"
+        >
             <div class="upload-icon">◎</div>
             <h3>Chụp ảnh</h3>
             <p>Sử dụng camera thiết bị.</p>
@@ -80,67 +94,133 @@
             <div class="upload-icon">↗</div>
             <h3>Link hình ảnh</h3>
             <p>Nhập đường dẫn hình ảnh.</p>
+
             <div class="url-input">
-                <input type="url" id="imageUrl"
-                       placeholder="https://example.com/image.jpg">
-                <button id="loadUrl">→</button>
+                <input
+                    type="url"
+                    id="imageUrl"
+                    placeholder="https://example.com/image.jpg"
+                >
+
+                <button id="loadUrl" type="button">→</button>
             </div>
         </div>
 
     </section>
 
-    <input type="file" id="imageInput"
-           accept="image/*" hidden>
+    <input
+        type="file"
+        id="imageInput"
+        accept="image/jpeg,image/png,image/webp"
+        hidden
+    >
 
+    <!-- PREVIEW -->
     <section class="preview-panel" id="previewPanel" hidden>
+
         <h2>Hình ảnh đã chọn</h2>
 
-        <img id="imagePreview" alt="Ảnh xem trước">
+        <img
+            id="imagePreview"
+            alt="Ảnh xem trước"
+        >
+
         <p id="imageName"></p>
 
-        <button id="classifyButton" class="primary-btn">
+        <p id="imageFileName" hidden></p>
+        <p id="imageSource" hidden></p>
+
+        <button
+            id="classifyButton"
+            class="primary-btn"
+            type="button"
+        >
             ✦ PHÂN LOẠI RÁC
         </button>
 
-        <button id="removeImage" class="secondary-btn">
+        <button
+            id="removeImage"
+            class="secondary-btn"
+            type="button"
+        >
             Xóa ảnh
         </button>
+
     </section>
 
+    <!-- STATUS -->
+    <p
+        id="classifyStatus"
+        class="status-message"
+        role="status"
+        aria-live="polite"
+    ></p>
+
+    <!-- CAMERA -->
     <section class="camera-panel" id="cameraPanel" hidden>
+
         <h2>Camera</h2>
 
-        <video id="cameraVideo" autoplay playsinline></video>
+        <video
+            id="cameraVideo"
+            autoplay
+            playsinline
+        ></video>
 
-        <button id="capturePhoto" class="primary-btn">
+        <button
+            id="capturePhoto"
+            class="primary-btn"
+            type="button"
+        >
             Chụp ảnh
         </button>
 
-        <button id="closeCamera" class="secondary-btn">
+        <button
+            id="closeCamera"
+            class="secondary-btn"
+            type="button"
+        >
             Đóng camera
         </button>
 
         <canvas id="cameraCanvas" hidden></canvas>
+
     </section>
 
+    <!-- RESULT -->
     <section class="result-panel" id="resultPanel" hidden>
+
         <h2>Kết quả phân loại</h2>
 
-        <img id="resultImage" alt="Ảnh kết quả">
+        <img
+            id="resultImage"
+            alt="Ảnh kết quả"
+        >
 
-        <h3 id="resultType"></h3>
+        <h3 id="resultType">Kết quả nhận diện</h3>
 
         <p id="resultDescription"></p>
 
         <div class="confidence">
-            Mức độ tin cậy:
+            Độ tin cậy trung bình:
             <strong id="resultConfidence"></strong>
         </div>
 
+        <h3 id="resultSummary"></h3>
+
+        <p id="resultCount"></p>
+
+        <!-- Danh sách từng vật thể AI nhận diện -->
+        <div
+            id="objectResults"
+            class="object-results"
+        ></div>
+
         <div class="advice-box">
-            <h3>♻ Đề xuất xử lý</h3>
+            <h3>♻ Đề xuất xử lý tổng hợp</h3>
             <p id="resultAdvice"></p>
         </div>
+
     </section>
 
     <p class="disclaimer">
@@ -148,13 +228,13 @@
     </p>
 
 </main>
-    
+
+<!-- SUPABASE -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase.js"></script>
-
-
 <script src="js/common.js"></script>
 <script src="js/app.js"></script>
 
 </body>
 </html>
+
