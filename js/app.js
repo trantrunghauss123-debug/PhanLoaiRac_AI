@@ -1,20 +1,26 @@
 
-/* =====================================================
-   ECOAI - SMART WASTE CLASSIFICATION
-   Main Application - Multi-object Recognition
-===================================================== */
+/* =========================================================
+   ECOAI - MAIN APPLICATION
+   Home + Gemini classification + Supabase history
+   Compatible with home.html and classify-waste/index.ts
+========================================================= */
 
 document.addEventListener("DOMContentLoaded", async () => {
-    const page = document.body.dataset.page;
     const client = window.ecoaiSupabase;
+    const page = document.body.dataset.page;
 
     if (!client) {
-        console.error("Supabase chưa được khởi tạo.");
+        console.error("EcoAI: Supabase client chưa khởi tạo.");
         return;
     }
 
-    // Kiểm tra người dùng đăng nhập
-    const user = await EcoAI.getCurrentUser();
+    let user = null;
+
+    try {
+        user = await EcoAI.getCurrentUser();
+    } catch (error) {
+        console.error("Không thể kiểm tra đăng nhập:", error);
+    }
 
     const protectedPages = ["home", "history", "about", "guide"];
 
@@ -25,31 +31,25 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (!user) return;
 
-    // Hiển thị thông tin người dùng
-    const name = user.name || "Người dùng";
+    // Đồng bộ tên người dùng
+    const userName = document.getElementById("userName");
 
-    ["userName", "topbarName"].forEach(id => {
-        const element = document.getElementById(id);
+    if (userName) {
+        userName.textContent = user.name || "Người dùng";
+    }
 
-        if (element) {
-            element.textContent =
-                id === "topbarName"
-                    ? `Xin chào, ${name}`
-                    : name;
-        }
-    });
+    const userEmail = document.getElementById("userEmail");
 
-    const email = document.getElementById("userEmail");
-    if (email) email.textContent = user.email || "";
+    if (userEmail) {
+        userEmail.textContent = user.email || "";
+    }
 
-    const avatar = document.getElementById("userAvatar");
-    if (avatar) avatar.textContent = name.charAt(0).toUpperCase();
-
-    // Đánh dấu menu đang hoạt động
+    // Điều hướng
     document.querySelectorAll("[data-nav]").forEach(link => {
-        if (link.dataset.nav === page) {
-            link.classList.add("active");
-        }
+        link.classList.toggle(
+            "active",
+            link.dataset.nav === page
+        );
     });
 
     // Đăng xuất
@@ -60,7 +60,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         });
 
-    // Menu mobile nếu có
+    // Mobile menu nếu trang có nút này
     document.getElementById("mobileMenu")
         ?.addEventListener("click", () => {
             document.getElementById("sidebar")
@@ -77,9 +77,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 
-/* =====================================================
-   HOME - IMAGE CLASSIFICATION
-===================================================== */
+/* =========================================================
+   HOME PAGE
+========================================================= */
 
 function initHome(user) {
     const $ = id => document.getElementById(id);
@@ -91,26 +91,17 @@ function initHome(user) {
 
     const MAX_IMAGE_SIZE = 7 * 1024 * 1024;
 
-    // Tạo vùng trạng thái nếu HTML chưa có
-    function getStatusElement() {
-        let element = $("classifyStatus");
+    const ALLOWED_TYPES = [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+    ];
 
-        if (!element) {
-            element = document.createElement("div");
-            element.id = "classifyStatus";
-            element.className = "status-message";
-            element.setAttribute("role", "status");
-            element.setAttribute("aria-live", "polite");
+    /* ---------------- STATUS ---------------- */
 
-            $("previewPanel")?.after(element);
-        }
-
-        return element;
-    }
-
-    // Hiển thị trạng thái
     function setStatus(message, isError = false) {
-        const element = getStatusElement();
+        const element = $("classifyStatus");
+        if (!element) return;
 
         element.textContent = message;
         element.className = isError
@@ -118,93 +109,83 @@ function initHome(user) {
             : "status-message";
     }
 
-    // Giải phóng URL xem trước cũ
-    function releasePreview() {
+    /* ---------------- PREVIEW ---------------- */
+
+    function clearOldPreview() {
         if (selectedPreview.startsWith("blob:")) {
             URL.revokeObjectURL(selectedPreview);
         }
     }
 
-    // Hiển thị ảnh xem trước
-    function showPreview(blob, name, source, previewUrl) {
-        releasePreview();
+    function showPreview(blob, name, source) {
+        clearOldPreview();
 
         selectedBlob = blob;
         selectedName = name;
-        selectedPreview = previewUrl;
+        selectedPreview = URL.createObjectURL(blob);
 
-        if ($("imagePreview")) {
-            $("imagePreview").src = previewUrl;
+        $("imagePreview").src = selectedPreview;
+        $("imageName").textContent = name;
+
+        if ($("imageFileName")) {
+            $("imageFileName").textContent = name;
         }
-
-        // Tương thích với cả ID cũ và mới
-        const fileName = $("imageFileName") || $("imageName");
-        if (fileName) fileName.textContent = name;
 
         if ($("imageSource")) {
             $("imageSource").textContent = source;
         }
 
-        if ($("previewPanel")) {
-            $("previewPanel").hidden = false;
-        }
-
-        if ($("resultPanel")) {
-            $("resultPanel").hidden = true;
-        }
+        $("previewPanel").hidden = false;
+        $("resultPanel").hidden = true;
 
         setStatus("");
 
-        $("previewPanel")?.scrollIntoView({
+        $("previewPanel").scrollIntoView({
             behavior: "smooth",
             block: "nearest"
         });
     }
 
+    /* ---------------- VALIDATE IMAGE ---------------- */
 
-    /* =================================================
-       1. UPLOAD IMAGE
-    ================================================= */
+    function validateImage(blob) {
+        if (!ALLOWED_TYPES.includes(blob.type)) {
+            throw new Error(
+                "Chỉ hỗ trợ ảnh JPG, PNG hoặc WEBP."
+            );
+        }
+
+        if (blob.size > MAX_IMAGE_SIZE) {
+            throw new Error("Ảnh tối đa 7 MB.");
+        }
+    }
+
+    /* ---------------- UPLOAD IMAGE ---------------- */
 
     $("imageInput")?.addEventListener("change", event => {
         const file = event.target.files?.[0];
 
         if (!file) return;
 
-        const allowedTypes = [
-            "image/jpeg",
-            "image/png",
-            "image/webp"
-        ];
+        try {
+            validateImage(file);
 
-        if (!allowedTypes.includes(file.type)) {
-            alert("Chỉ hỗ trợ ảnh JPG, PNG hoặc WEBP.");
+            showPreview(
+                file,
+                file.name,
+                "Ảnh tải từ thiết bị"
+            );
+
+        } catch (error) {
+            alert(error.message);
             event.target.value = "";
-            return;
         }
-
-        if (file.size > MAX_IMAGE_SIZE) {
-            alert("Ảnh tối đa 7 MB. Hãy chọn ảnh nhỏ hơn.");
-            event.target.value = "";
-            return;
-        }
-
-        showPreview(
-            file,
-            file.name,
-            "Ảnh tải từ thiết bị",
-            URL.createObjectURL(file)
-        );
     });
 
-
-    /* =================================================
-       2. LOAD IMAGE FROM URL
-    ================================================= */
+    /* ---------------- LOAD IMAGE URL ---------------- */
 
     $("loadUrl")?.addEventListener("click", async () => {
-        const input = $("imageUrl");
-        const url = input?.value.trim();
+        const url = $("imageUrl")?.value.trim();
 
         if (!url) {
             alert("Vui lòng nhập đường dẫn ảnh.");
@@ -215,96 +196,68 @@ function initHome(user) {
             const parsedUrl = new URL(url);
 
             if (!["http:", "https:"].includes(parsedUrl.protocol)) {
-                throw new Error("Đường dẫn không hợp lệ.");
+                throw new Error("Đường dẫn ảnh không hợp lệ.");
             }
 
             setStatus("Đang tải ảnh từ đường dẫn...");
 
-            const response = await fetch(parsedUrl.href, {
-                mode: "cors"
-            });
+            const response = await fetch(parsedUrl.href);
 
             if (!response.ok) {
-                throw new Error("Không tải được ảnh từ máy chủ.");
+                throw new Error("Không thể tải ảnh từ máy chủ.");
             }
 
             const blob = await response.blob();
 
-            const allowedTypes = [
-                "image/jpeg",
-                "image/png",
-                "image/webp"
-            ];
-
-            if (!allowedTypes.includes(blob.type)) {
-                throw new Error(
-                    "URL không trỏ đến ảnh JPG, PNG hoặc WEBP."
-                );
-            }
-
-            if (blob.size > MAX_IMAGE_SIZE) {
-                throw new Error("Ảnh tối đa 7 MB.");
-            }
+            validateImage(blob);
 
             showPreview(
                 blob,
                 "Ảnh từ URL",
-                "Đã tải ảnh từ đường dẫn",
-                URL.createObjectURL(blob)
+                "Ảnh tải từ đường dẫn"
             );
 
         } catch (error) {
             setStatus(
-                (error.message || "Không thể tải ảnh URL") +
-                ". Một số website chặn tải ảnh trực tiếp. " +
-                "Hãy tải ảnh về thiết bị rồi tải lên.",
+                error.message +
+                " Nếu website nguồn chặn CORS, hãy tải ảnh về máy rồi tải lên.",
                 true
             );
         }
     });
 
-
-    /* =================================================
-       3. CAMERA
-    ================================================= */
+    /* ---------------- CAMERA ---------------- */
 
     $("openCamera")?.addEventListener("click", async () => {
         if (!navigator.mediaDevices?.getUserMedia) {
-            alert("Camera cần HTTPS hoặc localhost.");
+            alert("Camera yêu cầu HTTPS hoặc localhost.");
             return;
         }
 
         try {
             cameraStream = await navigator.mediaDevices.getUserMedia({
                 video: {
-                    facingMode: {
-                        ideal: "environment"
-                    }
+                    facingMode: { ideal: "environment" }
                 },
                 audio: false
             });
 
-            const video = $("cameraVideo");
+            $("cameraVideo").srcObject = cameraStream;
+            $("cameraPanel").hidden = false;
 
-            if (video) {
-                video.srcObject = cameraStream;
-                await video.play();
-            }
-
-            if ($("cameraPanel")) {
-                $("cameraPanel").hidden = false;
-            }
+            await $("cameraVideo").play();
 
         } catch (error) {
             console.error("Camera error:", error);
-            alert("Không mở được camera. Hãy kiểm tra quyền camera.");
+            alert("Không mở được camera. Hãy kiểm tra quyền truy cập.");
         }
     });
 
     function stopCamera() {
-        cameraStream?.getTracks().forEach(track => track.stop());
-
-        cameraStream = null;
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+            cameraStream = null;
+        }
 
         if ($("cameraVideo")) {
             $("cameraVideo").srcObject = null;
@@ -321,7 +274,7 @@ function initHome(user) {
         const video = $("cameraVideo");
         const canvas = $("cameraCanvas");
 
-        if (!video || !canvas || !video.videoWidth) {
+        if (!video || !video.videoWidth) {
             alert("Camera chưa sẵn sàng.");
             return;
         }
@@ -347,34 +300,27 @@ function initHome(user) {
 
             showPreview(
                 blob,
-                "Ảnh chụp camera.jpg",
-                "Ảnh vừa chụp",
-                URL.createObjectURL(blob)
+                "Anh-chup-camera.jpg",
+                "Ảnh chụp từ camera"
             );
-        }, "image/jpeg", 0.9);
 
-        stopCamera();
+            stopCamera();
+
+        }, "image/jpeg", 0.9);
     });
 
-
-    /* =================================================
-       4. REMOVE IMAGE
-    ================================================= */
+    /* ---------------- REMOVE IMAGE ---------------- */
 
     $("removeImage")?.addEventListener("click", () => {
-        releasePreview();
+        clearOldPreview();
 
         selectedBlob = null;
         selectedName = "";
         selectedPreview = "";
 
-        if ($("previewPanel")) {
-            $("previewPanel").hidden = true;
-        }
-
-        if ($("resultPanel")) {
-            $("resultPanel").hidden = true;
-        }
+        $("imagePreview").removeAttribute("src");
+        $("previewPanel").hidden = true;
+        $("resultPanel").hidden = true;
 
         if ($("imageInput")) {
             $("imageInput").value = "";
@@ -383,10 +329,7 @@ function initHome(user) {
         setStatus("");
     });
 
-
-    /* =================================================
-       5. CLASSIFY IMAGE WITH GEMINI
-    ================================================= */
+    /* ---------------- CLASSIFY IMAGE ---------------- */
 
     $("classifyButton")?.addEventListener("click", async () => {
         if (!selectedBlob) {
@@ -397,19 +340,18 @@ function initHome(user) {
         const button = $("classifyButton");
 
         button.disabled = true;
-        button.textContent = "AI đang phân tích...";
+        button.textContent = "AI ĐANG PHÂN TÍCH...";
 
         setStatus(
-            "EcoAI đang phân tích hình ảnh và nhận diện các vật thể..."
+            "EcoAI đang gửi hình ảnh đến Gemini Vision..."
         );
 
         try {
-            const mimeType = selectedBlob.type || "image/jpeg";
-
             const imageBase64 = await blobToBase64(selectedBlob);
+            const mimeType = selectedBlob.type;
 
             if (!imageBase64) {
-                throw new Error("Không thể đọc dữ liệu ảnh.");
+                throw new Error("Không đọc được dữ liệu ảnh.");
             }
 
             const { data, error } =
@@ -424,30 +366,47 @@ function initHome(user) {
                 );
 
             if (error) {
-                let detail = error.message || "Không gọi được AI.";
+                let message = error.message ||
+                    "Không thể gọi Edge Function.";
 
+                // Đọc nội dung lỗi trả về từ Edge Function
                 try {
-                    const context = error.context;
+                    const response = error.context;
 
-                    if (context?.json) {
-                        const json = await context.json();
-                        detail = json.error || json.message || detail;
+                    if (response && typeof response.json === "function") {
+                        const errorData = await response.json();
+
+                        message =
+                            errorData.error ||
+                            errorData.details ||
+                            errorData.message ||
+                            message;
                     }
                 } catch (_) {}
 
-                throw new Error(detail);
+                throw new Error(message);
             }
 
-            if (!data?.success || !data?.classification) {
+            console.log("ECOAI RESPONSE:", data);
+
+            if (!data || data.success !== true) {
                 throw new Error(
-                    data?.error || "AI không trả về kết quả hợp lệ."
+                    data?.error ||
+                    data?.details ||
+                    "AI không trả về kết quả thành công."
                 );
             }
 
             const classification = data.classification;
 
-            if (!Array.isArray(classification.objects)) {
-                classification.objects = [];
+            if (
+                !classification ||
+                !Array.isArray(classification.objects)
+            ) {
+                throw new Error(
+                    "Dữ liệu classification.objects không hợp lệ. " +
+                    "Hãy kiểm tra index.ts đã được Deploy phiên bản mới."
+                );
             }
 
             // Hiển thị kết quả
@@ -457,27 +416,31 @@ function initHome(user) {
             );
 
             // Lưu lịch sử
-            await saveHistory(
+            const saved = await saveHistory(
                 user,
                 selectedName,
                 classification
             );
 
+            const count = classification.objects.length;
+
             setStatus(
-                `Phân tích hoàn tất: nhận diện ` +
-                `${classification.objects.length} nhóm vật thể.`
+                saved
+                    ? `Phân loại hoàn tất! AI nhận diện ${count} nhóm vật thể và đã lưu lịch sử.`
+                    : `AI nhận diện ${count} nhóm vật thể thành công, nhưng chưa lưu được lịch sử.`,
+                false
             );
 
-            $("resultPanel")?.scrollIntoView({
+            $("resultPanel").scrollIntoView({
                 behavior: "smooth",
                 block: "start"
             });
 
         } catch (error) {
-            console.error("EcoAI classification error:", error);
+            console.error("ECOAI CLASSIFICATION ERROR:", error);
 
             setStatus(
-                error.message || "Có lỗi khi phân loại ảnh.",
+                error.message || "Đã xảy ra lỗi khi phân loại ảnh.",
                 true
             );
 
@@ -489,9 +452,9 @@ function initHome(user) {
 }
 
 
-/* =====================================================
-   CONVERT IMAGE TO BASE64
-===================================================== */
+/* =========================================================
+   IMAGE TO BASE64
+========================================================= */
 
 function blobToBase64(blob) {
     return new Promise((resolve, reject) => {
@@ -499,11 +462,12 @@ function blobToBase64(blob) {
 
         reader.onload = () => {
             const result = String(reader.result || "");
-            resolve(result.split(",")[1] || "");
+            const base64 = result.split(",")[1] || "";
+            resolve(base64);
         };
 
         reader.onerror = () => {
-            reject(new Error("Không đọc được tệp ảnh."));
+            reject(new Error("Không thể đọc hình ảnh."));
         };
 
         reader.readAsDataURL(blob);
@@ -511,101 +475,75 @@ function blobToBase64(blob) {
 }
 
 
-/* =====================================================
-   RENDER CLASSIFICATION RESULT
-===================================================== */
+/* =========================================================
+   RENDER CLASSIFICATION
+========================================================= */
 
-function renderClassification(result, imageSrc) {
+function renderClassification(classification, imageSrc) {
     const $ = id => document.getElementById(id);
 
-    const panel = $("resultPanel");
-
-    if (!panel) return;
-
-    // Hiển thị ảnh
-    if ($("resultImage")) {
-        $("resultImage").src = imageSrc;
-    }
-
-    const objects = Array.isArray(result.objects)
-        ? result.objects
+    const objects = Array.isArray(classification.objects)
+        ? classification.objects
         : [];
 
-    // Tương thích HTML cũ
-    const summary =
-        result.summary ||
-        `AI nhận diện ${objects.length} nhóm vật thể.`;
+    $("resultImage").src = imageSrc;
 
-    if ($("resultType")) {
-        $("resultType").textContent = summary;
-    }
+    $("resultType").textContent = "Phân tích hoàn tất";
 
-    if ($("resultDescription")) {
-        $("resultDescription").textContent =
-            `Phát hiện ${objects.length} nhóm vật thể trong hình ảnh.`;
-    }
+    $("resultSummary").textContent =
+        classification.summary ||
+        "AI đã hoàn thành phân tích hình ảnh.";
 
-    if ($("resultConfidence")) {
-        const values = objects
-            .map(item => Number(item.confidence))
-            .filter(value => Number.isFinite(value) && value > 0);
+    $("resultDescription").textContent =
+        `EcoAI đã nhận diện ${objects.length} nhóm vật thể trong ảnh.`;
 
-        const average = values.length
-            ? Math.round(values.reduce((a, b) => a + b, 0) / values.length)
-            : 0;
+    $("resultCount").textContent =
+        `Tổng số nhóm vật thể: ${objects.length}`;
 
-        $("resultConfidence").textContent =
-            average ? `${average}% (trung bình)` : "Chưa xác định";
-    }
+    // Tính độ tin cậy trung bình
+    const confidenceValues = objects
+        .map(item => Number(item.confidence))
+        .filter(value => Number.isFinite(value));
 
-    if ($("resultAdvice")) {
-        $("resultAdvice").textContent = objects.length
-            ? objects.map(item =>
-                item.disposal_instructions || ""
-              ).filter(Boolean).join(" | ")
-            : "Chưa có đề xuất xử lý.";
-    }
+    const averageConfidence = confidenceValues.length
+        ? Math.round(
+            confidenceValues.reduce((a, b) => a + b, 0) /
+            confidenceValues.length
+        )
+        : 0;
 
-    // Tương thích với cấu trúc kết quả mới
-    if ($("resultSummary")) {
-        $("resultSummary").textContent = summary;
-    }
+    $("resultConfidence").textContent =
+        confidenceValues.length
+            ? `${averageConfidence}%`
+            : "Chưa xác định";
 
-    if ($("resultCount")) {
-        $("resultCount").textContent =
-            `${objects.length} nhóm vật thể`;
-    }
-
-    // Tạo khu vực hiển thị nhiều vật thể nếu chưa có
-    let list = $("objectResults");
-
-    if (!list) {
-        list = document.createElement("div");
-        list.id = "objectResults";
-        list.className = "object-results";
-
-        panel.appendChild(list);
-    }
+    const list = $("objectResults");
 
     if (!objects.length) {
         list.innerHTML =
-            '<p class="muted">Không phát hiện vật thể rác rõ ràng trong ảnh.</p>';
+            '<p class="muted">Chưa phát hiện vật thể rác rõ ràng trong hình ảnh.</p>';
 
-        panel.hidden = false;
+        $("resultAdvice").textContent =
+            "Không có đề xuất xử lý vì chưa nhận diện được vật thể.";
+
+        $("resultPanel").hidden = false;
         return;
     }
 
-    // Tạo thẻ kết quả cho từng vật thể
+    // Escape HTML để tránh hiển thị nội dung không an toàn
+    const safe = value =>
+        EcoAI.escapeHTML(String(value ?? ""));
+
     list.innerHTML = objects.map((item, index) => {
-        const name = EcoAI.escapeHTML(
+        const name = safe(
             item.object_name || `Vật thể ${index + 1}`
         );
 
-        const category = EcoAI.escapeHTML(
+        const category = safe(
             item.waste_category || "Chưa xác định"
         );
 
-        const material = EcoAI.escapeHTML(
+        const material = safe(
             item.material || "Chưa xác định"
         );
 
@@ -614,35 +552,49 @@ function renderClassification(result, imageSrc) {
             Number(item.quantity) || 1
         );
 
-        const recyclable =
-            item.recyclable === true ? "Có" :
-            item.recyclable === false ? "Không" :
-            "Chưa xác định";
-
-        const compostable =
-            item.compostable === true ? "Có" :
-            item.compostable === false ? "Không" :
-            "Chưa xác định";
-
         const confidence = Math.max(
             0,
             Math.min(100, Number(item.confidence) || 0)
         );
 
-        const instructions = EcoAI.escapeHTML(
+        const recyclable =
+            item.recyclable === true
+                ? "Có"
+                : item.recyclable === false
+                    ? "Không"
+                    : "Chưa xác định";
+
+        const compostable =
+            item.compostable === true
+                ? "Có"
+                : item.compostable === false
+                    ? "Không"
+                    : "Chưa xác định";
+
+        const hazardous =
+            item.hazardous === true
+                ? "Có"
+                : item.hazardous === false
+                    ? "Không"
+                    : "Chưa xác định";
+
+        const reason = safe(
+            item.reason || "Chưa có mô tả."
+        );
+
+        const instructions = safe(
             item.disposal_instructions ||
             "Kiểm tra hướng dẫn thu gom tại địa phương."
         );
 
-        const reason = EcoAI.escapeHTML(
-            item.reason || "Chưa có mô tả chi tiết."
+        const recyclingNote = safe(
+            item.recycling_note || "Chưa có thông tin."
         );
 
         return `
             <article class="object-card">
 
                 <div class="object-card-head">
-
                     <span class="object-number">
                         ${index + 1}
                     </span>
@@ -657,7 +609,6 @@ function renderClassification(result, imageSrc) {
                     <b class="object-confidence">
                         ${confidence}%
                     </b>
-
                 </div>
 
                 <div class="object-meta">
@@ -682,9 +633,21 @@ function renderClassification(result, imageSrc) {
                         <b>${compostable}</b>
                     </div>
 
+                    <div>
+                        <small>Rác nguy hại?</small>
+                        <b>${hazardous}</b>
+                    </div>
+
                 </div>
 
-                <p class="object-reason">${reason}</p>
+                <p class="object-reason">
+                    ${reason}
+                </p>
+
+                <p class="object-reason">
+                    <b>Ghi chú tái chế:</b>
+                    ${recyclingNote}
+                </p>
 
                 <div class="object-advice">
                     <b>♻ Hướng dẫn xử lý</b>
@@ -695,13 +658,22 @@ function renderClassification(result, imageSrc) {
         `;
     }).join("");
 
-    panel.hidden = false;
+    // Tổng hợp đề xuất xử lý
+    $("resultAdvice").textContent = objects.map(item => {
+        const name = item.object_name || "Vật thể";
+        const advice = item.disposal_instructions ||
+            "Chưa có hướng dẫn.";
+
+        return `${name}: ${advice}`;
+    }).join(" | ");
+
+    $("resultPanel").hidden = false;
 }
 
 
-/* =====================================================
-   SAVE CLASSIFICATION HISTORY TO SUPABASE
-===================================================== */
+/* =========================================================
+   SAVE HISTORY TO SUPABASE
+========================================================= */
 
 async function saveHistory(user, imageName, classification) {
     const objects = Array.isArray(classification.objects)
@@ -719,22 +691,17 @@ async function saveHistory(user, imageName, classification) {
         });
 
     if (error) {
-        console.error("Không lưu được lịch sử:", error);
-
-        const status = document.getElementById("classifyStatus");
-
-        if (status) {
-            status.textContent =
-                "AI đã phân loại thành công nhưng chưa lưu được lịch sử. " +
-                "Hãy kiểm tra bảng classification_history và quyền RLS.";
-        }
+        console.error("SAVE HISTORY ERROR:", error);
+        return false;
     }
+
+    return true;
 }
 
 
-/* =====================================================
+/* =========================================================
    HISTORY PAGE
-===================================================== */
+========================================================= */
 
 async function initHistory(user) {
     const list = document.getElementById("historyList");
@@ -745,17 +712,14 @@ async function initHistory(user) {
     list.innerHTML =
         '<p class="muted">Đang tải lịch sử...</p>';
 
-    const { data: items, error } =
-        await window.ecoaiSupabase
-            .from("classification_history")
-            .select(
-                "id,image_name,object_count,summary,objects,created_at"
-            )
-            .eq("user_id", user.id)
-            .order("created_at", {
-                ascending: false
-            })
-            .limit(100);
+    const { data, error } = await window.ecoaiSupabase
+        .from("classification_history")
+        .select(
+            "id,image_name,object_count,summary,objects,created_at"
+        )
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(100);
 
     if (error) {
         list.textContent =
@@ -765,30 +729,33 @@ async function initHistory(user) {
         return;
     }
 
-    const rows = items || [];
+    const rows = data || [];
 
     const total = document.getElementById("historyTotal");
     if (total) total.textContent = rows.length;
 
-    const allCategories = rows.flatMap(row =>
-        (row.objects || [])
-            .map(item => item.waste_category)
-            .filter(Boolean)
-    );
-
     const types = document.getElementById("historyTypes");
-    if (types) types.textContent = new Set(allCategories).size;
+
+    if (types) {
+        const categories = rows.flatMap(row =>
+            (row.objects || [])
+                .map(item => item.waste_category)
+                .filter(Boolean)
+        );
+
+        types.textContent = new Set(categories).size;
+    }
 
     empty.hidden = rows.length > 0;
 
+    const safe = value =>
+        EcoAI.escapeHTML(String(value ?? ""));
+
     list.innerHTML = rows.map(row => {
         const date = new Date(row.created_at);
-        const objects = row.objects || [];
 
-        const names = objects
-            .map(item =>
-                EcoAI.escapeHTML(item.object_name || "Vật thể")
-            )
+        const names = (row.objects || [])
+            .map(item => safe(item.object_name || "Vật thể"))
             .join(", ");
 
         return `
@@ -799,17 +766,10 @@ async function initHistory(user) {
                 <div>
                     <b>${names || "Không nhận diện được vật thể"}</b>
 
-                    <p>
-                        ${EcoAI.escapeHTML(
-                            row.image_name || "Ảnh phân loại"
-                        )}
-                    </p>
+                    <p>${safe(row.image_name || "Ảnh phân loại")}</p>
 
                     <p class="history-advice">
-                        ${EcoAI.escapeHTML(
-                            row.summary ||
-                            `${row.object_count} nhóm vật thể`
-                        )}
+                        ${safe(row.summary || "")}
                     </p>
 
                     <small>
@@ -820,7 +780,7 @@ async function initHistory(user) {
                             minute: "2-digit"
                         })}
                         ·
-                        ${row.object_count} nhóm vật thể
+                        ${Number(row.object_count) || 0} nhóm vật thể
                     </small>
                 </div>
 
@@ -830,23 +790,27 @@ async function initHistory(user) {
         `;
     }).join("");
 
-    // Xóa toàn bộ lịch sử
+    // Xóa lịch sử
     document.getElementById("clearHistory")
         ?.addEventListener("click", async () => {
             if (
                 !rows.length ||
-                !confirm("Xóa toàn bộ lịch sử phân loại của bạn?")
+                !confirm("Bạn có chắc muốn xóa toàn bộ lịch sử?")
             ) {
                 return;
             }
 
-            const { error } = await window.ecoaiSupabase
-                .from("classification_history")
-                .delete()
-                .eq("user_id", user.id);
+            const { error: deleteError } =
+                await window.ecoaiSupabase
+                    .from("classification_history")
+                    .delete()
+                    .eq("user_id", user.id);
 
-            if (error) {
-                alert("Không xóa được lịch sử: " + error.message);
+            if (deleteError) {
+                alert(
+                    "Không thể xóa lịch sử: " +
+                    deleteError.message
+                );
                 return;
             }
 
