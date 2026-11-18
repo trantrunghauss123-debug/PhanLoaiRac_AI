@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch sử - EcoAI</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="app-page" data-page="history">
+
+<div class="sidebar">
+    <div class="brand">
+        <div class="logo">E</div>
+        <h2>EcoAI</h2>
+    </div>
+
+    <p class="menu-title">MENU</p>
+
+    <nav>
+        <a href="home.html">⌂ Trang chủ</a>
+        <a href="history.html" class="active">◷ Lịch sử</a>
+        <a href="about.html">ⓘ Giới thiệu</a>
+        <a href="guide.html">▤ Hướng dẫn</a>
+    </nav>
+
+    <div class="sidebar-bottom">
+        <div id="userName">Người dùng</div>
+        <button id="logoutButton">↪ Đăng xuất</button>
+    </div>
+</div>
+
+<main class="main-content">
+
+    <header class="topbar">
+        <div>
+            <h2>Lịch sử phân loại</h2>
+            <p>Quản lý các lần phân loại rác của bạn.</p>
+        </div>
+    </header>
+
+    <section class="history-stats">
+        <div class="stat-card">
+            <span>Tổng lượt phân loại</span>
+            <h2 id="historyTotal">0</h2>
+        </div>
+
+        <div class="stat-card">
+            <span>Nhóm rác đã nhận diện</span>
+            <h2 id="historyTypes">0</h2>
+        </div>
+    </section>
+
+    <section class="history-container">
+        <div class="history-heading">
+            <div>
+                <h2>Lịch sử hoạt động</h2>
+                <p>Các hình ảnh đã được phân loại.</p>
+            </div>
+
+            <button id="clearHistory" class="secondary-btn">
+                Xóa lịch sử
+            </button>
+        </div>
+
+        <div id="historyList"></div>
+
+        <div id="historyEmpty" class="empty-state">
+            <h2>◷</h2>
+            <h3>Chưa có lịch sử</h3>
+            <p>
+                Các kết quả phân loại của bạn
+                sẽ được lưu trữ tại đây.
+            </p>
+            <a href="home.html" class="primary-btn">
+                Phân loại ngay
+            </a>
+        </div>
+    </section>
+
+</main>
+
+<script src="js/common.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
