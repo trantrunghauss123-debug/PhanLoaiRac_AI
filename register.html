@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký - EcoAI</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="auth-page">
+
+<div class="auth-container">
+
+    <div class="auth-left">
+        <div class="brand">
+            <div class="logo">E</div>
+            <h2>EcoAI</h2>
+        </div>
+
+        <div class="auth-message">
+            <span>JOIN THE GREEN FUTURE</span>
+            <h1>Hành trình xanh<br>
+                <span>bắt đầu từ bạn.</span>
+            </h1>
+            <p>
+                Đăng ký tài khoản để trải nghiệm hệ thống
+                phân loại rác thông minh.
+            </p>
+        </div>
+
+        <p class="copyright">EcoAI © 2026</p>
+    </div>
+
+    <div class="auth-right">
+
+        <form id="registerForm">
+
+            <span class="green-text">CREATE ACCOUNT</span>
+
+            <h1>Tạo tài khoản</h1>
+            <p>Tham gia cộng đồng EcoAI ngay hôm nay.</p>
+
+            <label>Họ và tên</label>
+            <input type="text" id="name"
+                   placeholder="Nguyễn Văn A" required>
+
+            <label>Email</label>
+            <input type="email" id="email"
+                   placeholder="Email của bạn" required>
+
+            <label>Mật khẩu</label>
+            <input type="password" id="password"
+                   minlength="6" placeholder="Ít nhất 6 ký tự" required>
+
+            <label>Xác nhận mật khẩu</label>
+            <input type="password" id="confirmPassword"
+                   minlength="6" placeholder="Nhập lại mật khẩu" required>
+
+            <div id="formMessage"></div>
+
+            <button type="submit" class="primary-btn">
+                Đăng ký →
+            </button>
+
+            <div class="auth-footer">
+                Đã có tài khoản?
+                <a href="login.html">Đăng nhập</a>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script src="js/common.js"></script>
+<script src="js/auth.js"></script>
+
+</body>
+</html>
